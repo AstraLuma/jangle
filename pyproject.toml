@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "django-discord-bot"
+version = "0.0.1"
+description = "Framework for Discord bots with Django"
+authors = ["Jamie Bliss <jamie@ivyleav.es>"]
+license = "agpl-3"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aiohttp = "^3.8.1"
+hypercorn = "^0.13.2"
+asgiref = "^3.5.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
