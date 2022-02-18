@@ -14,6 +14,8 @@ Framework for creating Discord bots using Django
 ## ASGI Messages
 
 
-* -> `discord.disconnect`: Connection is closed
+* -> `discord.disconnect`: The WebSocket connection was closed. This does not
+  mean we're shutting down, though--the framework will attempt to reconnect and
+  resume.
 * -> `discord.*`: Discord DISPATCH events are dynamically mapped to message types
   Of interest is `discord.ready`, which is sent after authentication has happened

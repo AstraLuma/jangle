@@ -41,6 +41,7 @@ class StatefulServer(StatelessServer):
 
 
 class DiscordGateway(StatefulServer):
+    # TODO: Hooks for saving/loading session and seq
 
     # Keeps a copy of the task responsible for heartbeating the connection.
     # Created by _ws_recv() and killed by handle()
@@ -54,6 +55,9 @@ class DiscordGateway(StatefulServer):
     # According to the discord docs, this is how we should detect zombie
     # connections.
     _last_hb_ack = None
+
+    # The session ID, used in resuming. Clear to disable resuming.
+    session_id = None 
 
     def __init__(self, app):
         """
@@ -71,7 +75,7 @@ class DiscordGateway(StatefulServer):
         print("Starting WebSocket handler")
         app_queue = self.get_or_create_application_instance(None, {'type': 'discord'})
         # TODO: Get gateway information from API
-        # TODO: Handle resuming
+        # TODO: Reconnect when disconnected
         self._last_seq = None
         async with aiohttp.ClientSession() as self.session, \
                    self.session.ws_connect('wss://gateway.discord.gg/?v=9&encoding=json') as self.sock:
@@ -84,6 +88,7 @@ class DiscordGateway(StatefulServer):
                         print(f"{msg=}")
                     if msg.type == aiohttp.WSMsgType.CLOSED:
                         print(f"{msg=}")
+                        await app_queue.put({'type': 'discord.disconnect'})
                         break
                     elif msg.type == aiohttp.WSMsgType.TEXT:
                         body = json.loads(msg.data)
@@ -112,19 +117,42 @@ class DiscordGateway(StatefulServer):
         print("Exiting WebSocket handler")
 
     async def _shoot_zombie(self):
-        # TODO: Communicate with main task that we should resume
         await self.sock.close(4242)  # idk, no obvious close code for "hello?"
 
     async def _ws_recv(self, app_queue, op, typ, d):
         """
         Actually handle the parsed message
         """
-        # TODO: Handle resuming
-
         if op == Op.DISPATCH:
+            if typ == 'READY':
+                # Save this for resuming
+                self.session_id = d['session_id']
             await app_queue.put({'type': f'discord.{typ.lower()}', 'data': d})
         elif op == Op.HELLO:
             self.heartbeat_task = asyncio.ensure_future(self._beater(d['heartbeat_interval'] / 1000))
+
+            if self.session_id:
+                # Attempting to resume
+                print("Resuming")
+                await self._ws_send(Op.RESUME, {
+                    "token": self.token,
+                    "session_id": self.session_id,
+                    "seq": self._last_seq,
+                })
+            else:
+                print("Fresh connection")
+                await self._ws_send(Op.IDENTIFY, {
+                    "token": self.token,
+                    "intents": int(self.intents),
+                    "properties": {
+                        "$os": "linux",  # FIXME
+                        "$browser": "django-discord-bot",  # TODO: Give some indication as to the actual service
+                        "$device": "django-discord-bot",
+                    },
+                })
+        elif op == Op.INVALID_SESSION:
+            print("Bad session, re-identifying")
+            await asyncio.sleep(random.uniform(1, 5))  # Per docs, wait a random 1 to 5 seconds before auth
             await self._ws_send(Op.IDENTIFY, {
                 "token": self.token,
                 "intents": int(self.intents),
@@ -134,6 +162,9 @@ class DiscordGateway(StatefulServer):
                     "$device": "django-discord-bot",
                 },
             })
+        elif op == Op.RECONNECT:
+            print("Reconnecting")
+            await self.sock.close()
         elif op == Op.HEARTBEAT:
             # The server asked for an immediate heartbeat
             # I'm not sure if we're supposed to delay the scheduled beat
