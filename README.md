@@ -9,3 +9,11 @@ Framework for creating Discord bots using Django
 
 * https://pycord.dev/
 * https://github.com/AdvocatesInc/django-channels-discord
+
+
+## ASGI Messages
+
+
+* -> `discord.disconnect`: Connection is closed
+* -> `discord.*`: Discord DISPATCH events are dynamically mapped to message types
+  Of interest is `discord.ready`, which is sent after authentication has happened
