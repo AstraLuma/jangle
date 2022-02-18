@@ -3,6 +3,7 @@ import contextlib
 import functools
 import json
 import random
+import time
 import traceback
 
 import aiohttp
@@ -48,6 +49,11 @@ class DiscordGateway(StatefulServer):
     # The sequence number of the last received message. Used in heartbeat and
     # resuming
     _last_seq = None
+
+    # The monotonic time of the last time we saw a heartbeat ack.
+    # According to the discord docs, this is how we should detect zombie
+    # connections.
+    _last_hb_ack = None
 
     def __init__(self, app):
         """
@@ -105,12 +111,15 @@ class DiscordGateway(StatefulServer):
                 await app_queue.put({'type': 'discord.disconnect'})
         print("Exiting WebSocket handler")
 
+    async def _shoot_zombie(self):
+        # TODO: Communicate with main task that we should resume
+        await self.sock.close(4242)  # idk, no obvious close code for "hello?"
+
     async def _ws_recv(self, app_queue, op, typ, d):
         """
         Actually handle the parsed message
         """
         # TODO: Handle resuming
-        # TODO: Handle heartbeating
 
         if op == Op.DISPATCH:
             await app_queue.put({'type': f'discord.{typ.lower()}', 'data': d})
@@ -130,6 +139,8 @@ class DiscordGateway(StatefulServer):
             # I'm not sure if we're supposed to delay the scheduled beat
             # We'll just ignore that for now
             await self._ws_send(Op.HEARTBEAT, self._last_seq)
+        elif op == Op.HEARTBEAT_ACK:
+            self._last_hb_ack = time.monotonic()
         else:
             print(f"Unhandled message {op=} {typ=} {d=}")
 
@@ -155,6 +166,11 @@ class DiscordGateway(StatefulServer):
         while True:
             await self._ws_send(Op.HEARTBEAT, self._last_seq)
             await asyncio.sleep(interval)
+            # Zombie check
+            if (time.monotonic() - self._last_hb_ack) > interval:
+                print("Zombie!")
+                await self._shoot_zombie()
+                return
 
 
 async def discord_app(scope, receive, send):
