@@ -34,6 +34,11 @@ class Intent(enum.IntFlag):
 
 
 class Op(enum.IntEnum):
+    """
+    Names for Discord Gateway Opcodes.
+
+    These names are used for dynamic mappings to ASGI.
+    """
     HEARTBEAT = 1  # C2S and S2C
 
     # Client to Server
@@ -47,60 +52,5 @@ class Op(enum.IntEnum):
     DISPATCH = 0
     HEARTBEAT_ACK = 11
     HELLO = 10
-    # Ready
-    # Resumed
     RECONNECT = 7
     INVALID_SESSION = 9
-    # Guild Sync   
-    # Channel Create
-    # Channel Update
-    # Channel Delete
-    # Thread Create
-    # Thread Update
-    # Thread Delete
-    # Thread List Sync
-    # Thread Member Update
-    # Thread Members Update
-    # Channel Pins Update
-    # Guild Create
-    # Guild Update
-    # Guild Delete
-    # Guild Ban Add
-    # Guild Ban Remove
-    # Guild Emojis Update
-    # Guild Stickers Update
-    # Guild Integrations Update
-    # Guild Member Add
-    # Guild Member Remove
-    # Guild Member Update
-    # Guild Members Chunk
-    # Guild Role Create
-    # Guild Role Update
-    # Guild Role Delete
-    # Guild Scheduled Event Create
-    # Guild Scheduled Event Update
-    # Guild Scheduled Event Delete
-    # Guild Scheduled Event User Add
-    # Guild Scheduled Event User Remove
-    # Integration Create
-    # Integration Update
-    # Integrationd Delete
-    # Invite Create
-    # Invite Delete
-    # Message Create
-    # Message Update
-    # Message Delete
-    # Message Delete Bulk
-    # Message Reaction Add
-    # Message Reaction Remove
-    # Message Reaction Remove All
-    # Message Reaction Remove Emoji
-    # Presence Update
-    # Typing Start
-    # User Update
-    # Voice State Update
-    # Voice Server Update
-    # Webhooks Update
-    # Interaction Create
-    # Stage Instance Create
-    # Stage Instance Update
