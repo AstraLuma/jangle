@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+import asyncio
+
+
 async def multiplex_lifespan(funcs):
     """
     Performs the whole algorithm to multiplex the lifespan protocol
 
-    Takes the list of functions to multiplex, returns an ASGI app
+    Takes the list of functions to multiplex, returns an ASGI app3
     """
     if not funcs:
         raise Exception("Nothing implementing lifespan, bye!")
