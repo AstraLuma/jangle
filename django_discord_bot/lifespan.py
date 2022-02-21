@@ -7,40 +7,43 @@ async def multiplex_lifespan(funcs):
     """
     Performs the whole algorithm to multiplex the lifespan protocol
 
-    Takes the list of functions to multiplex, returns an ASGI app3
+    Takes the list of functions to multiplex, returns an ASGI app.
+
+    This is safe for apps that don't implement lifespan.
     """
     if not funcs:
         raise Exception("Nothing implementing lifespan, bye!")
 
     def _(scope, receive, send):
-        wrappers = [LifespanWrapper(f, scope) for f in funcs]
+        if scope['type'] == 'lifespan':
+            wrappers = [LifespanWrapper(f, scope) for f in funcs]
 
-        try:
-            while True:
-                msg = await receive()
-                replies = await asyncio.gather(
-                    *(lw.send(msg) for lw in wrappers)
-                )
-                replies = filter(None, replies)
-                errors = [
-                    r
-                    for r in replies
-                    if r['type'].endswith('.failed')
-                ]
-                if errors:
-                    await send({
-                        'type': msg['type']+'.failed',
-                        'message': '\n'.join(e['message'] for e in errors)
-                    })
-                else:
-                    await send({
-                        'type': msg['type']+'.complete',
-                    })
-                if msg['type'] == 'lifespan.shutdown':
-                    return
-        finally:
-            for lw in wrappers:
-                lw.cancel()
+            try:
+                while True:
+                    msg = await receive()
+                    replies = await asyncio.gather(
+                        *(lw.send(msg) for lw in wrappers)
+                    )
+                    replies = filter(None, replies)
+                    errors = [
+                        r
+                        for r in replies
+                        if r['type'].endswith('.failed')
+                    ]
+                    if errors:
+                        await send({
+                            'type': msg['type']+'.failed',
+                            'message': '\n'.join(e['message'] for e in errors)
+                        })
+                    else:
+                        await send({
+                            'type': msg['type']+'.complete',
+                        })
+                    if msg['type'] == 'lifespan.shutdown':
+                        return
+            finally:
+                for lw in wrappers:
+                    lw.cancel()
     return _
 
 

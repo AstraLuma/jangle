@@ -35,11 +35,33 @@ async def kill_task(task):
 
 
 class StatefulServer(StatelessServer):
+    checker = None
+    handler = None
+
     async def start(self):
+        assert self.handler is self.checker is None
         self.checker = asyncio.ensure_future(self.application_checker())
         self.handler = asyncio.ensure_future(self.handle())
 
     async def close(self):
-        self.handler.cancel()
-        self.checker.cancel()
-        await asyncio.gather(self.handler, self.checker, return_exceptions=True)
+        await kill_task(self.handler)
+        await kill_task(self.checker)
+        self.checker = None
+        self.handler = None
+
+    async def as_app(self, scope, receive, send):
+        """
+        Wraps the server as an ASGI lifespan app.
+        """
+        if scope['type'] == 'lifespan':
+            while True:
+                message = await receive()
+                if message['type'] == 'lifespan.startup':
+                    print("startup")
+                    await self.start()
+                    await send({'type': 'lifespan.startup.complete'})
+                elif message['type'] == 'lifespan.shutdown':
+                    print("shutdown")
+                    await self.close()
+                    await send({'type': 'lifespan.shutdown.complete'})
+                    return
