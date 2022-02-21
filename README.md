@@ -28,12 +28,17 @@ scaling, you are a strong enough developer to figure out how to add it in.
 ## Deliverables
 
 * Low-level ASGI stuff
-  * Discord gateway ASGI server (connects to the Discord Gateway API and connects it to an ASGI app)
-  * Lifespan multiplexer (allow multiple apps to be connected to lifespan)
+  * [x] Discord gateway ASGI server (connects to the Discord Gateway API and connects it to an ASGI app)
+  * [ ] Lifespan multiplexer (allow multiple apps to be connected to lifespan)
 * Django-based ASGI app
-  * Signals for events
-  * Some kind of django-flavored command framework
-* Opinions about an in-process cron thingy
-* Utilities to make it easy to wire up everything
-* Opinions about Discord API client
-* Template application to demonstrate the use of all of that
+  * [ ] Signals for events
+  * [ ] Some kind of django-flavored command framework
+* [ ] Opinions about an in-process cron thingy
+* [ ] Utilities to make it easy to wire up everything
+* [ ] Opinions about Discord API client
+  * Should be sync/async (to match current Django)
+  * Process-wide connection pool
+  * Way to get a default client authenticated with a configured bot token
+* [ ] Opinions about OAuth2 handling & user management
+  * django-allauth + minimal user
+* [ ] Template application to demonstrate the use of all of that
