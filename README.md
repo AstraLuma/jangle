@@ -39,7 +39,7 @@ scaling, you are a strong enough developer to figure out how to add it in.
 
 * Low-level ASGI stuff
   * [x] Discord gateway ASGI server (connects to the Discord Gateway API and connects it to an ASGI app)
-  * [ ] Lifespan multiplexer (allow multiple apps to be connected to lifespan)
+  * [x] Lifespan multiplexer (allow multiple apps to be connected to lifespan)
 * Django-based ASGI app
   * [ ] Events: Django Signals or Channels app?
   * [ ] Some kind of django-flavored command framework
