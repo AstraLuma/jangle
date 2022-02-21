@@ -1,2 +1,3 @@
 __pycache__/
 /django_discord_bot/local_config.py
+*.sublime-*
