@@ -68,11 +68,11 @@ class StatefulServer(StatelessServer):
             while True:
                 message = await receive()
                 if message['type'] == 'lifespan.startup':
-                    print("startup")
+                    print(f"startup {self!r}")
                     await self.start()
                     await send({'type': 'lifespan.startup.complete'})
                 elif message['type'] == 'lifespan.shutdown':
-                    print("shutdown")
+                    print("shutdown {self!r}")
                     await self.close()
                     await send({'type': 'lifespan.shutdown.complete'})
                     return

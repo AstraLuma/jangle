@@ -3,6 +3,8 @@ from __future__ import annotations
 from .discord import DiscordGateway, Intent
 from . import local_config
 from .junk_drawer import exception_logger_async
+from .lifespan import multiplex_lifespan
+from .sched import ScheduleServer
 
 discord_task = None
 
@@ -22,22 +24,14 @@ async def discord_app(scope, receive, send):
 
 
 @exception_logger_async
-async def app(scope, receive, send):
+def app(scope, receive, send):
     global discord_task
     if scope['type'] == 'lifespan':
-        while True:
-            message = await receive()
-            if message['type'] == 'lifespan.startup':
-                print("startup")
-                discord_task = DiscordGateway(
-                    discord_app, token=local_config.TOKEN, intents=Intent.ALL,
-                )
-                await discord_task.start()
-                await send({'type': 'lifespan.startup.complete'})
-            elif message['type'] == 'lifespan.shutdown':
-                print("shutdown")
-                await discord_task.close()
-                await send({'type': 'lifespan.shutdown.complete'})
-                return
+        return multiplex_lifespan([
+            DiscordGateway(
+                discord_app, token=local_config.TOKEN, intents=Intent.ALL,
+            ),
+            ScheduleServer(),
+        ])(scope, receive, send)
     else:
         pass  # Handle other types

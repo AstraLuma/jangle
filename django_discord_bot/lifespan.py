@@ -3,7 +3,10 @@ from __future__ import annotations
 import asyncio
 
 
-async def multiplex_lifespan(funcs):
+__all__ = ('multiplex_lifespan',)
+
+
+def multiplex_lifespan(funcs):
     """
     Performs the whole algorithm to multiplex the lifespan protocol
 
@@ -14,7 +17,7 @@ async def multiplex_lifespan(funcs):
     if not funcs:
         raise Exception("Nothing implementing lifespan, bye!")
 
-    def _(scope, receive, send):
+    async def _(scope, receive, send):
         if scope['type'] == 'lifespan':
             wrappers = [LifespanWrapper(f, scope) for f in funcs]
 

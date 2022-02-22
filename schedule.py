@@ -200,7 +200,7 @@ class Scheduler:
         """
         if isinstance(time, int):
             time = datetime.datetime.fromtimestamp(time)
-        retunr OneTimeJob_Absolute(time)
+        return OneTimeJob_Absolute(time)
 
 
 class BaseJob:

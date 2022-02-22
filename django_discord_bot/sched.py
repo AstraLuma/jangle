@@ -27,7 +27,7 @@ class ScheduleServer:
     async def handle(self):
         while True:
             schedule.run_pending()
-            nextschedule = schedule.idle_seconds
+            nextschedule = schedule.idle_seconds()
             await asyncio.sleep(nextschedule or 1)
 
     # Boilerplatey stuff
@@ -47,11 +47,11 @@ class ScheduleServer:
             while True:
                 message = await receive()
                 if message['type'] == 'lifespan.startup':
-                    print("startup")
+                    print(f"startup {self!r}")
                     await self.start()
                     await send({'type': 'lifespan.startup.complete'})
                 elif message['type'] == 'lifespan.shutdown':
-                    print("shutdown")
+                    print(f"shutdown {self!r}")
                     await self.close()
                     await send({'type': 'lifespan.shutdown.complete'})
                     return
