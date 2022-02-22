@@ -43,7 +43,7 @@ scaling, you are a strong enough developer to figure out how to add it in.
 * Django-based ASGI app
   * [ ] Events: Django Signals or Channels app?
   * [ ] Some kind of django-flavored command framework
-* [ ] Opinions about an in-process cron thingy
+* [x] Opinions about an in-process cron thingy
 * [ ] Utilities to make it easy to wire up everything
 * [ ] Opinions about Discord API client
   * Should be sync/async (to match current Django)
