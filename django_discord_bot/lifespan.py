@@ -57,7 +57,7 @@ class LifespanWrapper:
     def __init__(self, func, scope):
         self._o2i_queue = asyncio.Queue(1)  # Outter to inner
         self._i2o_queue = asyncio.Queue(1)  # Inner to outter
-        self._task = asyncio.ensure_future(
+        self._task = asyncio.create_task(
             func(scope, self._o2i_queue.get, self._i2o_queue.put)
         )
         self._task_finished = asyncio.Event()

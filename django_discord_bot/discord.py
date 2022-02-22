@@ -203,7 +203,7 @@ class DiscordGateway(StatefulServer):
                 self.ready.set()
             await app_queue.put({'type': f'discord.{typ.lower()}', 'data': d})
         elif op == Op.HELLO:
-            self.heartbeat_task = asyncio.ensure_future(
+            self.heartbeat_task = asyncio.create_task(
                 self._beater(d['heartbeat_interval'] / 1000)
             )
 

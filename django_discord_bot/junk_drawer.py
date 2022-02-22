@@ -23,6 +23,17 @@ def exception_logger_async(func):
     return _
 
 
+def exception_logger_sync(func):
+    @functools.wraps(func)
+    async def _(*p, **kw):
+        try:
+            return func(*p, **kw)
+        except Exception:
+            traceback.print_exc()
+            raise
+    return _
+
+
 async def kill_task(task):
     if task is not None:
         task.cancel()
@@ -40,8 +51,8 @@ class StatefulServer(StatelessServer):
 
     async def start(self):
         assert self.handler is self.checker is None
-        self.checker = asyncio.ensure_future(self.application_checker())
-        self.handler = asyncio.ensure_future(self.handle())
+        self.checker = asyncio.create_task(self.application_checker())
+        self.handler = asyncio.create_task(self.handle())
 
     async def close(self):
         await kill_task(self.handler)
@@ -49,7 +60,7 @@ class StatefulServer(StatelessServer):
         self.checker = None
         self.handler = None
 
-    async def as_app(self, scope, receive, send):
+    async def __call__(self, scope, receive, send):
         """
         Wraps the server as an ASGI lifespan app.
         """
