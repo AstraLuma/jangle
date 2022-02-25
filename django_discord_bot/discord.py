@@ -4,6 +4,7 @@ Low-level bits for talking to discord
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
 import enum
 import json
@@ -11,8 +12,32 @@ import random
 import time
 
 import aiohttp
+import httpx
 
 from .junk_drawer import exception_logger_async, kill_task, StatefulServer
+
+
+# TODO: Global connection pool
+@contextlib.contextmanager
+def clinet_sync(token: str, *, v: int = 9) -> httpx.Client:
+    """
+    Returns an httpx.Client configured with the token and a base URL.
+    """
+    with httpx.Client(base_url=f'https://discord.com/api/v{v}', headers={
+        'Authorization': f'Bot {token}',
+    }, http2=True) as client:
+        yield client
+
+
+@contextlib.asynccontextmanager
+async def clinet_async(token: str, *, v: int = 9) -> httpx.AsyncClient:
+    """
+    Returns an httpx.Client configured with the token and a base URL.
+    """
+    async with httpx.AsyncClient(base_url=f'https://discord.com/api/v{v}', headers={
+        'Authorization': f'Bot {token}',
+    }) as client:
+        yield client
 
 
 class Intent(enum.IntFlag):
@@ -121,6 +146,15 @@ class DiscordGateway(StatefulServer):
         self.token = token
         self.intents = intents
 
+    async def _get_gateway_url(self):
+        async with clinet_async(self.token) as client:
+            r = await client.get('/gateway/bot')
+            r.raise_for_status()
+            blob = r.json()
+            # TODO: Check session limits and maybe wait
+            print(f"Session limits: {blob['session_start_limit']['remaining']}/{blob['session_start_limit']['total']} left")
+            return blob['url']
+
     async def _connection_handler(self):
         """
         Does the low-level connecting and connection loops.
@@ -134,8 +168,10 @@ class DiscordGateway(StatefulServer):
             while True:
                 # TODO: Get gateway information from API
                 # TODO: Take option for protocol version
-                async with self.session.ws_connect('wss://gateway.discord.gg/?v=9&encoding=json') \
+                ws_base = await self._get_gateway_url()
+                async with self.session.ws_connect(ws_base, params={'v': 9, 'encoding': 'json'}) \
                            as self.sock:
+                    print("Connected to", ws_base)
                     while True:
                         msg = await self.sock.receive()
                         if msg.type == aiohttp.WSMsgType.CLOSE:

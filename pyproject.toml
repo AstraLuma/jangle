@@ -10,6 +10,7 @@ python = "^3.10"
 aiohttp = "^3.8.1"
 hypercorn = "^0.13.2"
 asgiref = "^3.5.0"
+httpx = "^0.22.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
