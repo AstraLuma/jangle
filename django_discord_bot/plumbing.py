@@ -8,6 +8,7 @@ import contextlib
 import dataclasses
 import enum
 import json
+import logging
 import random
 import time
 
@@ -15,6 +16,9 @@ import aiohttp
 import httpx
 
 from .junk_drawer import exception_logger_async, kill_task, StatefulServer
+
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Global connection pool
@@ -152,7 +156,11 @@ class DiscordGateway(StatefulServer):
             r.raise_for_status()
             blob = r.json()
             # TODO: Check session limits and maybe wait
-            print(f"Session limits: {blob['session_start_limit']['remaining']}/{blob['session_start_limit']['total']} left")
+            logger.debug(
+                "Session limits: %i/%i left",
+                blob['session_start_limit']['remaining'],
+                blob['session_start_limit']['total'],
+            )
             return blob['url']
 
     async def _connection_handler(self):
@@ -171,13 +179,13 @@ class DiscordGateway(StatefulServer):
                 ws_base = await self._get_gateway_url()
                 async with self.session.ws_connect(ws_base, params={'v': 9, 'encoding': 'json'}) \
                            as self.sock:
-                    print("Connected to", ws_base)
+                    logger.debug("Connected to %s", ws_base)
                     while True:
                         msg = await self.sock.receive()
                         if msg.type == aiohttp.WSMsgType.CLOSE:
                             # We should handle this intelligently
                             # TODO: Read the code and log a more helpful message
-                            print(f"{msg=}")
+                            logger.debug("msg=%r", msg)
                             yield msg
                         elif msg.type == aiohttp.WSMsgType.CLOSED:
                             yield msg
@@ -191,11 +199,11 @@ class DiscordGateway(StatefulServer):
                             yield DiscordMessage(op=op, t=typ, d=payload, s=seq)
                         # TODO: Handle ETF
                         else:
-                            print(f"{msg=}")
+                            logger.debug("msg=%r", msg)
 
     @exception_logger_async
     async def handle(self):
-        print("Starting WebSocket handler")
+        logger.debug("Starting WebSocket handler")
         app_queue = self.get_or_create_application_instance(None, {'type': 'discord'})
         self._last_seq = None
         try:
@@ -207,10 +215,10 @@ class DiscordGateway(StatefulServer):
                     if msg.type == aiohttp.WSMsgType.CLOSE:
                         # We should handle this intelligently
                         # TODO: Read the code and log a more helpful message
-                        print(f"{msg=}")
+                        logger.debug("msg=%r", msg)
                         self.ready.clear()
                     elif msg.type == aiohttp.WSMsgType.CLOSED:
-                        print(f"{msg=}")
+                        logger.debug("msg=%r", msg)
                         self.ready.clear()
                         await kill_task(self.heartbeat_task)
                         await app_queue.put({'type': 'discord.disconnect'})
@@ -219,12 +227,12 @@ class DiscordGateway(StatefulServer):
                         self._last_seq = msg.s
                     await self._ws_recv(app_queue, msg.op, msg.t, msg.d)
                 else:
-                    print(f"{msg=}")
+                    logger.debug("msg=%r", msg)
 
         finally:
             await kill_task(self.heartbeat_task)
             await app_queue.put({'type': 'discord.disconnect'})
-        print("Exiting WebSocket handler")
+        logger.debug("Exiting WebSocket handler")
 
     async def _ws_recv(self, app_queue, op, typ, d):
         """
@@ -245,22 +253,22 @@ class DiscordGateway(StatefulServer):
 
             if self.session_id:
                 # Attempting to resume
-                print("Resuming")
+                logger.debug("Resuming")
                 await self._ws_send(Op.RESUME, {
                     "token": self.token,
                     "session_id": self.session_id,
                     "seq": self._last_seq,
                 })
             else:
-                print("Fresh connection")
+                logger.debug("Fresh connection")
                 await self._ws_send(Op.IDENTIFY, self._build_identify())
         elif op == Op.INVALID_SESSION:
-            print("Bad session, re-identifying")
+            logger.debug("Bad session, re-identifying")
             # Per gateway docs, wait a random 1 to 5 seconds before re-auth
             await asyncio.sleep(random.uniform(1, 5))
             await self._ws_send(Op.IDENTIFY, self._build_identify())
         elif op == Op.RECONNECT:
-            print("Reconnecting")
+            logger.debug("Reconnecting")
             await self.sock.close()
         elif op == Op.HEARTBEAT:
             # The server asked for an immediate heartbeat.
@@ -270,7 +278,7 @@ class DiscordGateway(StatefulServer):
         elif op == Op.HEARTBEAT_ACK:
             self._last_hb_ack = time.monotonic()
         else:
-            print(f"Unhandled message {op=} {typ=} {d=}")
+            logger.debug("Unhandled message op=%r typ=%r d=%r", op, typ, d)
 
     async def _shoot_zombie(self):
         await self.sock.close(4242)  # idk, no obvious close code for "hello?"
@@ -301,12 +309,12 @@ class DiscordGateway(StatefulServer):
 
     async def application_send(self, scope, message):
         if scope['type'] == 'discord':
-            print(f"Send to discord {scope=} {message=}")
+            logger.debug("Send to discord scope=%r message=%r", scope, message)
             await self.ready.wait()
             t = message.pop('type')
             await self._ws_send(asgi_type_to_op[t], message)
         else:
-            print(f"Unknown {scope=}")
+            logger.debug("Unknown scope=%r", scope)
 
     async def _beater(self, interval):
         """
@@ -314,12 +322,12 @@ class DiscordGateway(StatefulServer):
         """
         # TODO: Handle heartbeat ack and zombie connections
         await asyncio.sleep(interval * random.random())
-        print(f"Starting heartbeat every {interval} seconds")
+        logger.debug("Starting heartbeat every %s seconds", interval)
         while True:
             await self._ws_send(Op.HEARTBEAT, self._last_seq)
             await asyncio.sleep(interval)
             # Zombie check
             if (time.monotonic() - self._last_hb_ack) > interval:
-                print("Zombie!")
+                logger.debug("Zombie!")
                 await self._shoot_zombie()
                 return

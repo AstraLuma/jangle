@@ -55,6 +55,18 @@ from .junk_drawer import kill_task, LifeSpanMixin
 logger = logging.getLogger(__name__)
 
 
+class ScheduleError(RuntimeError):
+    """
+    Bad scheduling operation
+    """
+
+
+class ScheduleValueError(Exception):
+    """
+    Invalid chain of calls
+    """
+
+
 class IntervalError(ValueError):
     """An improper interval was used"""
 
@@ -257,7 +269,7 @@ class BaseJob:
         Specifies the job_func that should be called every time the job runs.
 
         Any additional arguments are passed on to job_func when the job runs.
-    
+
         Note: If your function is meant to be async, make sure it's a coroutine.
 
         :param job_func: The function to be scheduled
@@ -993,7 +1005,7 @@ def in_(interval):
 
 
 def at(time):
-    return default_scheduler.at(interval)
+    return default_scheduler.at(time)
 
 
 def run_pending() -> None:
@@ -1070,8 +1082,8 @@ class ScheduleServer(LifeSpanMixin):
 
     async def handle(self):
         while True:
-            schedule.run_pending()
-            nextschedule = schedule.idle_seconds()
+            run_pending()
+            nextschedule = idle_seconds()
             await asyncio.sleep(nextschedule or 1)
 
     # Boilerplatey stuff

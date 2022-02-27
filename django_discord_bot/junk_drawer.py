@@ -5,9 +5,13 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 import traceback
 
 from asgiref.server import StatelessServer
+
+
+logger = logging.getLogger(__name__)
 
 
 def exception_logger_async(func):
@@ -64,11 +68,11 @@ class LifeSpanMixin:
                 while True:
                     message = await receive()
                     if message['type'] == 'lifespan.startup':
-                        print(f"startup {self!r}")
+                        logger.debug("startup %r", self)
                         await self.start()
                         await send({'type': 'lifespan.startup.complete'})
                     elif message['type'] == 'lifespan.shutdown':
-                        print("shutdown {self!r}")
+                        logger.debug("shutdown %r", self)
                         await self.close()
                         await send({'type': 'lifespan.shutdown.complete'})
                         return

@@ -4,7 +4,6 @@ from asgiref.compatibility import guarantee_single_callable
 
 from .plumbing import DiscordGateway, Intent
 from . import local_config
-from .junk_drawer import exception_logger_async
 from .lifespan import multiplex_lifespan
 from .schedule import ScheduleServer
 
@@ -56,22 +55,3 @@ class Bot_ProtocolTypeRouter(ProtocolTypeRouter_WithLifespan):
                 token=local_config.TOKEN, intents=Intent.ALL,
             ).as_asgi()]
         super().__init__(application_mapping, extra_apps)
-
-
-async def discord_app(scope, receive, send):
-    if scope['type'] == 'discord':
-        while True:
-            message = await receive()
-            print(f"Message from discord {message=}")
-            if message['type'] == 'discord.ready':
-                await send({
-                    "type": "discord.guild_request_members",
-                    "guild_id": 810010108347547708,
-                    "query": "",
-                    "limit": 0,
-                })
-
-
-app = Bot_ProtocolTypeRouter({
-    'discord': discord_app
-})
