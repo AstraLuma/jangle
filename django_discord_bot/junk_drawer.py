@@ -45,7 +45,37 @@ async def kill_task(task):
             traceback.print_exc()
 
 
-class StatefulServer(StatelessServer):
+class LifeSpanMixin:
+    """
+    Mixins for ASGI servers to act as a lifespan app.
+    """
+    async def start(self):
+        raise NotImplementedError
+
+    async def close(self):
+        raise NotImplementedError
+
+    def as_asgi(self):
+        async def app(scope, receive, send):
+            """
+            Wraps the server as an ASGI lifespan app.
+            """
+            if scope['type'] == 'lifespan':
+                while True:
+                    message = await receive()
+                    if message['type'] == 'lifespan.startup':
+                        print(f"startup {self!r}")
+                        await self.start()
+                        await send({'type': 'lifespan.startup.complete'})
+                    elif message['type'] == 'lifespan.shutdown':
+                        print("shutdown {self!r}")
+                        await self.close()
+                        await send({'type': 'lifespan.shutdown.complete'})
+                        return
+        return app
+
+
+class StatefulServer(LifeSpanMixin, StatelessServer):
     checker = None
     handler = None
 
@@ -59,20 +89,3 @@ class StatefulServer(StatelessServer):
         await kill_task(self.checker)
         self.checker = None
         self.handler = None
-
-    async def __call__(self, scope, receive, send):
-        """
-        Wraps the server as an ASGI lifespan app.
-        """
-        if scope['type'] == 'lifespan':
-            while True:
-                message = await receive()
-                if message['type'] == 'lifespan.startup':
-                    print(f"startup {self!r}")
-                    await self.start()
-                    await send({'type': 'lifespan.startup.complete'})
-                elif message['type'] == 'lifespan.shutdown':
-                    print("shutdown {self!r}")
-                    await self.close()
-                    await send({'type': 'lifespan.shutdown.complete'})
-                    return

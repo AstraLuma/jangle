@@ -8,12 +8,14 @@ license = "agpl-3"
 [tool.poetry.dependencies]
 python = "^3.10"
 aiohttp = "^3.8.1"
-hypercorn = "^0.13.2"
 asgiref = "^3.5.0"
 httpx = "^0.22.0"
+Django = "~4.0"
+channels = "~3.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
+hypercorn = "^0.13.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

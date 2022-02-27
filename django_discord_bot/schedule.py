@@ -2,7 +2,7 @@
 """
 Python job scheduling for humans.
 
-github.com/dbader/schedule
+Vendored on 2022-02-21 from github.com/dbader/schedule
 
 An in-process scheduler for periodic jobs that uses the builder pattern
 for configuration. Schedule lets you run Python functions (or any other
@@ -11,12 +11,6 @@ human-friendly syntax.
 
 Inspired by Addam Wiggins' article "Rethinking Cron" [1] and the
 "clockwork" Ruby module [2][3].
-
-Features:
-    - A simple to use API for scheduling jobs.
-    - Very lightweight and no external dependencies.
-    - Excellent test coverage.
-    - Tested on Python 3.6, 3.7, 3.8, 3.9
 
 Usage:
     >>> import schedule
@@ -55,7 +49,10 @@ import re
 import time
 from typing import Set, List, Optional, Callable, Union
 
-logger = logging.getLogger("schedule")
+from .junk_drawer import kill_task, LifeSpanMixin
+
+
+logger = logging.getLogger(__name__)
 
 
 class IntervalError(ValueError):
@@ -1063,3 +1060,25 @@ def repeat(job, *args, **kwargs):
         return decorated_function
 
     return _schedule_decorator
+
+
+class ScheduleServer(LifeSpanMixin):
+    """
+    ASGI "server" that runs schedules.
+    """
+    handler = None
+
+    async def handle(self):
+        while True:
+            schedule.run_pending()
+            nextschedule = schedule.idle_seconds()
+            await asyncio.sleep(nextschedule or 1)
+
+    # Boilerplatey stuff
+    async def start(self):
+        assert self.handler is None
+        self.handler = asyncio.create_task(self.handle())
+
+    async def close(self):
+        await kill_task(self.handler)
+        self.handler = None

@@ -21,7 +21,7 @@ from .junk_drawer import exception_logger_async, kill_task, StatefulServer
 @contextlib.contextmanager
 def clinet_sync(token: str, *, v: int = 9) -> httpx.Client:
     """
-    Returns an httpx.Client configured with the token and a base URL.
+    Returns an httpx sync client configured with the token and a base URL.
     """
     with httpx.Client(base_url=f'https://discord.com/api/v{v}', headers={
         'Authorization': f'Bot {token}',
@@ -32,7 +32,7 @@ def clinet_sync(token: str, *, v: int = 9) -> httpx.Client:
 @contextlib.asynccontextmanager
 async def clinet_async(token: str, *, v: int = 9) -> httpx.AsyncClient:
     """
-    Returns an httpx.Client configured with the token and a base URL.
+    Returns an httpx async client configured with the token and a base URL.
     """
     async with httpx.AsyncClient(base_url=f'https://discord.com/api/v{v}', headers={
         'Authorization': f'Bot {token}',
