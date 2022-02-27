@@ -3,7 +3,6 @@ from __future__ import annotations
 from asgiref.compatibility import guarantee_single_callable
 
 from .plumbing import DiscordGateway, Intent
-from . import local_config
 from .lifespan import multiplex_lifespan
 from .schedule import ScheduleServer
 
@@ -46,12 +45,11 @@ class Bot_ProtocolTypeRouter(ProtocolTypeRouter_WithLifespan):
     """
     Wires up our opinions about what bots need.
     """
-    def __init__(self, application_mapping, extra_apps=()):
+    def __init__(self, application_mapping, extra_apps=(), *, token):
         extra_apps = [*extra_apps, ScheduleServer().as_asgi()]
         if 'discord' in application_mapping:
-            # FIXME: Config
             extra_apps += [DiscordGateway(
                 application_mapping.pop('discord'),
-                token=local_config.TOKEN, intents=Intent.ALL,
+                token=token, intents=Intent.ALL,
             ).as_asgi()]
         super().__init__(application_mapping, extra_apps)

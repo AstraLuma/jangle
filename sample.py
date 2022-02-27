@@ -1,5 +1,6 @@
 from django_discord_bot import Bot_ProtocolTypeRouter
 
+import local_config
 
 async def discord_app(scope, receive, send):
     if scope['type'] == 'discord':
@@ -17,4 +18,4 @@ async def discord_app(scope, receive, send):
 
 app = Bot_ProtocolTypeRouter({
     'discord': discord_app
-})
+}, token=local_config.TOKEN)
