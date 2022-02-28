@@ -49,7 +49,7 @@ import re
 import time
 from typing import Set, List, Optional, Callable, Union
 
-from .junk_drawer import kill_task, LifeSpanMixin
+from .junk_drawer import kill_task, LifeSpanMixin, race
 
 
 logger = logging.getLogger(__name__)
@@ -86,6 +86,7 @@ class Scheduler:
 
     def __init__(self) -> None:
         self.jobs: List[Job] = []
+        self.changed = asyncio.Event()
 
     def run_pending(self) -> None:
         """
@@ -133,6 +134,10 @@ class Scheduler:
         else:
             return [job for job in self.jobs if tag in job.tags]
 
+    def add(self, job: BaseJob):
+        self.jobs.append(job)
+        self.changed.set()
+
     def clear(self, tag: Optional[Hashable] = None) -> None:
         """
         Deletes scheduled jobs marked with the given tag, or all jobs
@@ -147,8 +152,9 @@ class Scheduler:
         else:
             logger.debug('Deleting all jobs tagged "%s"', tag)
             self.jobs[:] = (job for job in self.jobs if tag not in job.tags)
+        self.changed.set()
 
-    def cancel_job(self, job: "Job") -> None:
+    def cancel_job(self, job: BaseJob) -> None:
         """
         Delete a scheduled job.
 
@@ -159,8 +165,9 @@ class Scheduler:
             self.jobs.remove(job)
         except ValueError:
             logger.debug('Cancelling not-scheduled job "%s"', str(job))
+        self.changed.set()
 
-    def _run_job(self, job: "Job") -> None:
+    def _run_job(self, job: BaseJob) -> None:
         ret = job.run()
         if isinstance(ret, CancelJob) or ret is CancelJob:
             self.cancel_job(job)
@@ -282,7 +289,7 @@ class BaseJob:
             )
         else:
             self.job_func = lambda: asyncio.get_running_loop().run_in_executor(
-                functools.partial(job_func, *args, **kwargs)
+                None, functools.partial(job_func, *args, **kwargs)
             )
         functools.update_wrapper(self.job_func, job_func)
         self._schedule_next_run()
@@ -291,7 +298,7 @@ class BaseJob:
                 "Unable to a add job to schedule. "
                 "Job is not associated with an scheduler"
             )
-        self.scheduler.jobs.append(self)
+        self.scheduler.add(self)
         return self
 
     @property
@@ -1083,8 +1090,12 @@ class ScheduleServer(LifeSpanMixin):
     async def handle(self):
         while True:
             run_pending()
+            default_scheduler.changed.clear()
             nextschedule = idle_seconds()
-            await asyncio.sleep(nextschedule or 1)
+            await race(
+                asyncio.sleep(nextschedule or 1),
+                default_scheduler.changed.wait()
+            )
 
     # Boilerplatey stuff
     async def start(self):

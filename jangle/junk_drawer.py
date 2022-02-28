@@ -49,6 +49,23 @@ async def kill_task(task):
             traceback.print_exc()
 
 
+async def race(*aws):
+    """
+    Races a collection of awaitables.
+
+    Returns the result of the winner.
+
+    Cancels the losers.
+    """
+    aws = map(asyncio.ensure_future, aws)
+    done, pending = await asyncio.wait(aws, return_when=asyncio.FIRST_COMPLETED)
+    assert len(done) == 1
+    winner = next(iter(done))
+    for task in pending:
+        task.cancel()
+    return await winner
+
+
 class LifeSpanMixin:
     """
     Mixins for ASGI servers to act as a lifespan app.

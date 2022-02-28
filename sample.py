@@ -1,6 +1,15 @@
-from django_discord_bot import Bot_ProtocolTypeRouter
+from jangle import Bot_ProtocolTypeRouter, schedule
 
 import local_config
+
+
+def check_in_sync():
+    print("Checking in, synchronously!")
+
+
+async def check_in_async():
+    print("Checking in, asynchronously!")
+
 
 async def discord_app(scope, receive, send):
     if scope['type'] == 'discord':
@@ -15,6 +24,9 @@ async def discord_app(scope, receive, send):
                     "limit": 0,
                 })
 
+
+schedule.every(1).minute.do(check_in_sync)
+schedule.every(1).minute.do(check_in_async)
 
 app = Bot_ProtocolTypeRouter({
     'discord': discord_app
