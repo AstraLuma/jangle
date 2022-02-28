@@ -2,8 +2,10 @@
 name = "jangle"
 version = "0.0.1"
 description = "Framework for Discord bots with Django"
+readme = "README.md"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
-license = "agpl-3"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/AstraLuma/jangle"
 
 [tool.poetry.dependencies]
 python = "^3.10"
