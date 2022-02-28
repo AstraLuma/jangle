@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "django-discord-bot"
+name = "jangle"
 version = "0.0.1"
 description = "Framework for Discord bots with Django"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]

@@ -1,4 +1,4 @@
-# django-discord-bot
+# jangle
 Framework for creating Discord bots using Django.
 
 The goal is to provide a complete framework for creating complex Discord bots,

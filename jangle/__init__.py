@@ -6,8 +6,6 @@ from .plumbing import DiscordGateway, Intent
 from .lifespan import multiplex_lifespan
 from .schedule import ScheduleServer
 
-discord_task = None
-
 
 class ProtocolTypeRouter_WithLifespan:
     """
