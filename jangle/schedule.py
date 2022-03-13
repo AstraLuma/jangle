@@ -250,11 +250,9 @@ class BaseJob:
         else:
             job_func_name = repr(self.job_func)
 
-        return ("{}(do={}, args={}, kwargs={})").format(
+        return ("{}(do={})").format(
             type(self).__name__,
             job_func_name,
-            "()" if self.job_func is None else self.job_func.args,
-            "{}" if self.job_func is None else self.job_func.keywords,
         )
 
     def tag(self, *tags: Hashable):
@@ -316,7 +314,7 @@ class BaseJob:
         :return: The return value returned by the `job_func`
 
         """
-        logger.debug("Running job %s", self)
+        logger.debug("Running job %r", self)
         ret = self.job_func()
         self.last_run = datetime.datetime.now()
         self._schedule_next_run()
@@ -396,13 +394,11 @@ class Job(BaseJob):
         else:
             job_func_name = repr(self.job_func)
 
-        return ("{}(interval={}, unit={}, do={}, args={}, kwargs={})").format(
+        return ("{}(interval={}, unit={}, do={})").format(
             type(self).__name__,
             self.interval,
             self.unit,
             job_func_name,
-            "()" if self.job_func is None else self.job_func.args,
-            "{}" if self.job_func is None else self.job_func.keywords,
         )
 
     def __str__(self):
