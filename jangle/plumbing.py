@@ -15,7 +15,9 @@ import time
 import aiohttp
 import httpx
 
-from .junk_drawer import exception_logger_async, kill_task, StatefulServer
+from .junk_drawer import (
+    exception_logger_async, kill_task, StatefulServer, get_token,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -23,10 +25,13 @@ logger = logging.getLogger(__name__)
 
 # TODO: Global connection pool
 @contextlib.contextmanager
-def clinet_sync(token: str, *, v: int = 9) -> httpx.Client:
+def clinet_sync(token: str = None, *, v: int = 9) -> httpx.Client:
     """
     Returns an httpx sync client configured with the token and a base URL.
     """
+    if token is None:
+        token = get_token()
+
     with httpx.Client(base_url=f'https://discord.com/api/v{v}', headers={
         'Authorization': f'Bot {token}',
     }, http2=True) as client:
@@ -34,10 +39,13 @@ def clinet_sync(token: str, *, v: int = 9) -> httpx.Client:
 
 
 @contextlib.asynccontextmanager
-async def clinet_async(token: str, *, v: int = 9) -> httpx.AsyncClient:
+async def clinet_async(token: str = None, *, v: int = 9) -> httpx.AsyncClient:
     """
     Returns an httpx async client configured with the token and a base URL.
     """
+    if token is None:
+        token = get_token()
+
     async with httpx.AsyncClient(base_url=f'https://discord.com/api/v{v}', headers={
         'Authorization': f'Bot {token}',
     }) as client:
@@ -139,7 +147,7 @@ class DiscordGateway(StatefulServer):
     #: Indicates if the websocket is open and available
     ready: asyncio.Event
 
-    def __init__(self, app, *, token, intents=Intent.BASIC):
+    def __init__(self, app, *, token=None, intents=Intent.BASIC):
         """
         app: ASGI app to handle more stuff
         """
@@ -147,7 +155,7 @@ class DiscordGateway(StatefulServer):
         self.ready = asyncio.Event()
 
         # Configuration
-        self.token = token
+        self.token = token or get_token()
         self.intents = intents
 
     async def _get_gateway_url(self):

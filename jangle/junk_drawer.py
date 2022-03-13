@@ -110,3 +110,11 @@ class StatefulServer(LifeSpanMixin, StatelessServer):
         await kill_task(self.checker)
         self.checker = None
         self.handler = None
+
+
+def get_token():
+    """
+    Looks in the django config for a discord token
+    """
+    from django.conf import settings  # Delay import
+    return settings.DISCORD_TOKEN

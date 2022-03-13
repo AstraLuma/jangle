@@ -43,7 +43,7 @@ class Bot_ProtocolTypeRouter(ProtocolTypeRouter_WithLifespan):
     """
     Wires up our opinions about what bots need.
     """
-    def __init__(self, application_mapping, extra_apps=(), *, token):
+    def __init__(self, application_mapping, extra_apps=(), *, token=None):
         extra_apps = [*extra_apps, ScheduleServer().as_asgi()]
         if 'discord' in application_mapping:
             extra_apps += [DiscordGateway(
