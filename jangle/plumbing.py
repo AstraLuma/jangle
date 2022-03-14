@@ -286,10 +286,10 @@ class DiscordGateway(StatefulServer):
         elif op == Op.HEARTBEAT_ACK:
             self._last_hb_ack = time.monotonic()
         else:
-            logger.debug("Unhandled message op=%r typ=%r d=%r", op, typ, d)
+            logger.info("Unhandled gateway message op=%r typ=%r d=%r", op, typ, d)
 
     async def _shoot_zombie(self):
-        await self.sock.close(4242)  # idk, no obvious close code for "hello?"
+        await self.sock.close(code=4242, message="Shooting zombie")  # idk, no obvious close code for "hello?"
 
     def _build_identify(self):
         """
