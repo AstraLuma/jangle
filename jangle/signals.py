@@ -41,19 +41,19 @@ channel_update = _Signal()
 channel_delete = _Signal()
 
 # THREAD_CREATE https://discord.com/developers/docs/topics/gateway#thread-create
-#: thread_create(sender: Discord, *, thread)
+#: thread_create(sender: Discord, *, channel)
 thread_create = _Signal()
 
 # THREAD_UPDATE https://discord.com/developers/docs/topics/gateway#thread-update
-#: thread_update(sender: Discord, *, thread)
+#: thread_update(sender: Discord, *, channel)
 thread_update = _Signal()
 
 # THREAD_DELETE https://discord.com/developers/docs/topics/gateway#thread-delete
-#: thread_delete(sender: Discord, *, thread)
+#: thread_delete(sender: Discord, *, channel)
 thread_delete = _Signal()
 
 # THREAD_LIST_SYNC https://discord.com/developers/docs/topics/gateway#thread-list-sync
-#: thread_list_sync(sender: Discord, *, channel_ids, threads, memberships)
+#: thread_list_sync(sender: Discord, *, guild_id, channel_ids=None, threads, memberships)
 thread_list_sync = _Signal()
 
 # THREAD_MEMBER_UPDATE https://discord.com/developers/docs/topics/gateway#thread-member-update
@@ -61,7 +61,7 @@ thread_list_sync = _Signal()
 thread_member_update = _Signal()
 
 # THREAD_MEMBERS_UPDATE https://discord.com/developers/docs/topics/gateway#thread-members-update
-#: thread_members_update(sender: Discord, *, count, added_memberships, removed_membership_ids)
+#: thread_members_update(sender: Discord, *, thread_id, guild_id, count, added_memberships, removed_membership_ids)
 thread_members_update = _Signal()
 
 # CHANNEL_PINS_UPDATE https://discord.com/developers/docs/topics/gateway#channel-pins-update
@@ -130,7 +130,7 @@ guild_role_delete = _Signal()
 
 # GUILD_SCHEDULED_EVENT_CREATE https://discord.com/developers/docs/topics/gateway#guild-scheduled-event-create
 #: guild_scheduled_event_create(sender: Discord, *, event)
-guild_role_create = _Signal()
+guild_scheduled_event_create = _Signal()
 
 # GUILD_SCHEDULED_EVENT_UPDATE https://discord.com/developers/docs/topics/gateway#guild-scheduled-event-update
 #: guild_scheduled_event_update(sender: Discord, *, event)
