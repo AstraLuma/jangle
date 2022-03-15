@@ -182,7 +182,6 @@ class DiscordGateway(StatefulServer):
         """
         async with aiohttp.ClientSession() as self.session:
             while True:
-                # TODO: Get gateway information from API
                 # TODO: Take option for protocol version
                 ws_base = await self._get_gateway_url()
                 async with self.session.ws_connect(ws_base, params={'v': 9, 'encoding': 'json'}) \
@@ -328,7 +327,6 @@ class DiscordGateway(StatefulServer):
         """
         Heartbeat task
         """
-        # TODO: Handle heartbeat ack and zombie connections
         await asyncio.sleep(interval * random.random())
         logger.debug("Starting heartbeat every %s seconds", interval)
         while True:
